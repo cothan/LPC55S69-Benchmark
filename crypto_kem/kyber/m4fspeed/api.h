@@ -1,24 +1,24 @@
 #ifndef API_H
 #define API_H
 
-#include "params.h"
+#define KYBER_SEC 5
 
-#define CRYPTO_SECRETKEYBYTES  KYBER_SECRETKEYBYTES
-#define CRYPTO_PUBLICKEYBYTES  KYBER_PUBLICKEYBYTES
-#define CRYPTO_CIPHERTEXTBYTES KYBER_CIPHERTEXTBYTES
-#define CRYPTO_BYTES           KYBER_SSBYTES
+#ifndef KYBER_SEC
+#define KYBER_SEC 3
+#endif
 
-#define CRYPTO_ALGNAME "Kyber768"
-#define KYBER_NAMESPACE(s) pqcrystals_kyber_##s
+#if KYBER_SEC == 1
+#include "api1.h"
+#include "params1.h"
 
-#define crypto_kem_keypair KYBER_NAMESPACE(keypair)
-int crypto_kem_keypair(unsigned char *pk, unsigned char *sk);
+#elif KYBER_SEC == 3
+#include "api3.h"
+#include "params3.h"
 
-#define crypto_kem_enc KYBER_NAMESPACE(enc)
-int crypto_kem_enc(unsigned char *ct, unsigned char *ss, const unsigned char *pk);
+#elif KYBER_SEC == 5
+#include "api5.h"
+#include "params5.h"
 
-#define crypto_kem_dec KYBER_NAMESPACE(dec)
-int crypto_kem_dec(unsigned char *ss, const unsigned char *ct, const unsigned char *sk);
-
+#endif
 
 #endif
