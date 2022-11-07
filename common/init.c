@@ -13,7 +13,8 @@ void init_crypto(void)
 void sha256(unsigned char *out,
             const unsigned char *in, unsigned long long inlen)
 {
-    HASHCRYPT_SHA(HASHCRYPT, kHASHCRYPT_Sha256, in, inlen, out, 32);
+	size_t outlen;
+    HASHCRYPT_SHA(HASHCRYPT, kHASHCRYPT_Sha256, in, inlen, out, &outlen);
 }
 void init(void)
 {

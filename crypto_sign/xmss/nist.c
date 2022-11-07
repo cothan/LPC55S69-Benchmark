@@ -3,6 +3,8 @@
 #include "nist_params.h"
 #include "xmss.h"
 
+#define DEBUG 0
+
 #if DEBUG
 #include <stdio.h>
 #endif
@@ -86,3 +88,5 @@ int crypto_remaining_signatures(unsigned long long *remain, const unsigned char 
     }
     return 0;
 }
+
+#undef DEBUG

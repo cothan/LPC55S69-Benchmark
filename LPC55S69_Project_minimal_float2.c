@@ -42,7 +42,7 @@
 /* TODO: insert other include files here. */
 #include "init.h"
 
-#define CHECK 2
+#define CHECK 1
 
 #if CHECK == 0
 #include "dilithium/m4f/api.h"
@@ -52,6 +52,10 @@
 #elif CHECK == 2
 #include "xmss/api.h"
 #include "xmss/nist_params.h"
+#elif CHECK == 3
+#include "falcon-512/m4-ct/api.h"
+#elif CHECK == 4
+#include "hawk/hawk.h"
 #endif
 
 /* TODO: insert other definitions and declarations here. */
@@ -82,31 +86,32 @@
         fflush(stdout);                                                 \
     } while (0)
 
-#define TIME_PUBLIC(TYPE, COUNTER, CODE)                                                        \
-    do                                                                                          \
-    {                                                                                           \
-        uint32_t ii;                                                                            \
-        uint64_t tsc;                                                                           \
-        int ret;                                                                                \
-                                                                                                \
-        ret = 0;                                                                                \
-        tsc = cpucycles();                                                                      \
-        for (ii = 0; ii < COUNTER && !ret; ii++)                                                \
-        {                                                                                       \
-            ret = CODE;                                                                         \
-        }                                                                                       \
-        tsc = cpucycles() - tsc;                                                                \
-        if (ret != 0)                                                                           \
-        {                                                                                       \
-            PRINTF(TYPE ": error\r\n");                                                         \
-            PRINTF(TYPE ": %6.2f ms", (float)tsc * 1000 / COUNTER / CLOCK_GetCoreSysClkFreq()); \
-            PRINTF("\r\n");                                                                     \
-        }                                                                                       \
-        else                                                                                    \
-        {                                                                                       \
-            PRINTF(TYPE ": %6.2f ms", (float)tsc * 1000 / COUNTER / CLOCK_GetCoreSysClkFreq()); \
-            PRINTF("\r\n");                                                                     \
-        }                                                                                       \
+#define TIME_PUBLIC(TYPE, COUNTER, CODE)                                                 \
+    do                                                                                   \
+    {                                                                                    \
+        uint32_t ii;                                                                     \
+        uint64_t tsc;                                                                    \
+        int ret;                                                                         \
+                                                                                         \
+        ret = 0;                                                                         \
+        tsc = cpucycles();                                                               \
+        for (ii = 0; ii < COUNTER && !ret; ii++)                                         \
+        {                                                                                \
+            ret = CODE;                                                                  \
+        }                                                                                \
+        tsc = cpucycles() - tsc;                                                         \
+        tsc *= 1000;                                                                     \
+        if (ret != 0)                                                                    \
+        {                                                                                \
+            PRINTF(TYPE ": error\r\n");                                                  \
+            PRINTF(TYPE ": %6.2f ms", (float)tsc / COUNTER / CLOCK_GetCoreSysClkFreq()); \
+            PRINTF("\r\n");                                                              \
+        }                                                                                \
+        else                                                                             \
+        {                                                                                \
+            PRINTF(TYPE ": %6.2f ms", (float)tsc / COUNTER / CLOCK_GetCoreSysClkFreq()); \
+            PRINTF("\r\n");                                                              \
+        }                                                                                \
     } while (0)
 
 #if CHECK == 0
@@ -115,34 +120,13 @@ void bench_Dilithium(void)
     uint8_t sk[DILITHIUM_SECRETKEYBYTES], pk[DILITHIUM_PUBLICKEYBYTES];
 
     PRINTF("\r\nWorking with DILITHIUM-%d\r\n", DILITHIUM_MODE);
-    PRINTF("Benchmark Keygen\r\n");
-
-    CC_PUBLIC("pqcrystals_dilithium_keypair", 100,
-              pqcrystals_dilithium_crypto_sign_keypair(pk, sk));
-
-    CC_PUBLIC("pqcrystals_dilithium_keypair", 10,
-              pqcrystals_dilithium_crypto_sign_keypair(pk, sk));
-
-    CC_PUBLIC("pqcrystals_dilithium_keypair", 1,
-              pqcrystals_dilithium_crypto_sign_keypair(pk, sk));
 
     TIME_PUBLIC("pqcrystals_dilithium_keypair", 100,
                 pqcrystals_dilithium_crypto_sign_keypair(pk, sk));
 
-    PRINTF("Benchmark Sign\r\n");
-
     uint8_t sig[DILITHIUM_CRYPTO_BYTES];
     uint8_t m[] = "This is a test from SandboxAQ";
     size_t siglen = 0;
-
-    CC_PUBLIC("pqcrystals_dilithium_signature", 100,
-              pqcrystals_dilithium_signature(sig, &siglen, m, sizeof(m), sk));
-
-    CC_PUBLIC("pqcrystals_dilithium_signature", 10,
-              pqcrystals_dilithium_signature(sig, &siglen, m, sizeof(m), sk));
-
-    CC_PUBLIC("pqcrystals_dilithium_signature", 1,
-              pqcrystals_dilithium_signature(sig, &siglen, m, sizeof(m), sk));
 
     TIME_PUBLIC("pqcrystals_dilithium_signature", 100,
                 pqcrystals_dilithium_signature(sig, &siglen, m, sizeof(m), sk));
@@ -158,38 +142,12 @@ void bench_Kyber(void)
     uint8_t ct[CRYPTO_CIPHERTEXTBYTES], ss1[CRYPTO_BYTES] = {0}, ss2[CRYPTO_BYTES] = {0};
 
     PRINTF("\r\nWorking with KYBER-%d\r\n", KYBER_K);
-    PRINTF("Benchmark Keygen\r\n");
-
-    CC_PUBLIC("pqcrystals_kyber_keypair", 100,
-              pqcrystals_kyber_keypair(pk, sk));
 
     TIME_PUBLIC("pqcrystals_kyber_keypair", 100,
                 pqcrystals_kyber_keypair(pk, sk));
 
-    PRINTF("Benchmark Encap\r\n");
-
-    CC_PUBLIC("pqcrystals_kyber_enc", 100,
-              pqcrystals_kyber_enc(ct, ss1, pk));
-
-    CC_PUBLIC("pqcrystals_kyber_enc", 10,
-              pqcrystals_kyber_enc(ct, ss1, pk));
-
-    CC_PUBLIC("pqcrystals_kyber_enc", 1,
-              pqcrystals_kyber_enc(ct, ss1, pk));
-
     TIME_PUBLIC("pqcrystals_kyber_enc", 100,
                 pqcrystals_kyber_enc(ct, ss1, pk));
-
-    PRINTF("Benchmark Decap\r\n");
-
-    CC_PUBLIC("pqcrystals_kyber_dec", 100,
-              pqcrystals_kyber_dec(ss2, ct, sk));
-
-    CC_PUBLIC("pqcrystals_kyber_dec", 10,
-              pqcrystals_kyber_dec(ss2, ct, sk));
-
-    CC_PUBLIC("pqcrystals_kyber_dec", 1,
-              pqcrystals_kyber_dec(ss2, ct, sk));
 
     TIME_PUBLIC("pqcrystals_kyber_dec", 100,
                 pqcrystals_kyber_dec(ss2, ct, sk));
@@ -220,36 +178,27 @@ void bench_XMSS(void)
 {
     uint8_t sk[CRYPTO_SECRET_KEY], pk[CRYPTO_PUBLIC_KEY];
     uint8_t m[] = "This is a test from SandboxAQ";
-    uint8_t mout[XMSS_SIGNBYTES + sizeof(m)];
-    uint8_t sig[XMSS_SIGNBYTES + sizeof(m)];
-    size_t siglen = 0, mout_len = 0;
+    uint8_t mout[XMSS_SIGNBYTES + sizeof(m)] = {0};
+    uint8_t sm[XMSS_SIGNBYTES + sizeof(m)];
+    size_t smlen = 0, mout_len = 0;
 
     PRINTF("\r\nWorking with %s\r\n", XMSS_OID);
-    PRINTF("Benchmark Keygen\r\n");
-
-    // CC_PUBLIC("xmss_crypto_keypair", 1,
-    //           xmss_crypto_keypair(pk, sk));
 
     TIME_PUBLIC("xmss_crypto_keypair", 1,
                 xmss_crypto_keypair(pk, sk));
 
-    PRINTF("Benchmark Sign\r\n");
+    TIME_PUBLIC("xmss_crypto_sign", 100,
+                xmss_crypto_sign(sm, &smlen, m, sizeof(m), sk));
 
-    // CC_PUBLIC("xmss_crypto_sign", 1,
-    //           xmss_crypto_sign(sig, &siglen, m, sizeof(m), sk));
+    TIME_PUBLIC("xmss_crypto_sign_open", 100,
+                xmss_crypto_sign_open(mout, &mout_len, sm, smlen, pk));
 
-    TIME_PUBLIC("xmss_crypto_sign", 10,
-                xmss_crypto_sign(sig, &siglen, m, sizeof(m), sk));
+    if (mout_len != sizeof(m))
+    {
+        PRINTF("return size ERROR: %lu - %lu\r\n", mout_len, sizeof(m));
+    }
 
-    PRINTF("Benchmark Verify\r\n");
-
-    // CC_PUBLIC("xmss_crypto_sign_open", 1,
-    //           xmss_crypto_sign_open(mout, &mout_len, sig, siglen, pk));
-
-    TIME_PUBLIC("xmss_crypto_sign_open", 10,
-                xmss_crypto_sign_open(mout, &mout_len, sig, siglen, pk));
-
-    if (memcmp(m, mout, mout_len))
+    if (memcmp(m, mout, sizeof(m)))
     {
         PRINTF("ERROR\r\n");
     }
@@ -257,6 +206,99 @@ void bench_XMSS(void)
     {
         PRINTF("GOOD\r\n");
     }
+}
+#elif CHECK == 3
+void bench_Falcon(void)
+{
+    uint8_t sk[CRYPTO_SECRETKEYBYTES], pk[CRYPTO_PUBLICKEYBYTES];
+    uint8_t m[] = "This is a test from SandboxAQ";
+    uint8_t sm[CRYPTO_BYTES + sizeof(m)];
+    uint8_t mout[CRYPTO_BYTES + sizeof(m)];
+    size_t smlen = 0, mout_len = 0;
+
+    PRINTF("\r\nWorking with %s\r\n", CRYPTO_ALGNAME);
+
+    TIME_PUBLIC("falcon_crypto_sign_keypair", 1,
+                falcon_crypto_sign_keypair(pk, sk));
+
+    TIME_PUBLIC("falcon_crypto_sign", 100,
+                falcon_crypto_sign(sm, &smlen, m, sizeof(m), sk));
+
+    TIME_PUBLIC("falcon_crypto_sign_open", 100,
+                falcon_crypto_sign_open(mout, &mout_len, sm, smlen, pk));
+
+    if (mout_len != sizeof(m))
+    {
+        PRINTF("return size ERROR: %lu - %lu\r\n", mout_len, sizeof(m));
+    }
+
+    if (memcmp(m, mout, sizeof(m)))
+    {
+        PRINTF("ERROR\r\n");
+    }
+    else
+    {
+        PRINTF("GOOD\r\n");
+    }
+}
+#elif CHECK == 4
+
+typedef struct
+{
+    unsigned logn;
+    shake256_context rng;
+    uint8_t *tmp, *pk, *sk, *esk, *sig;
+    size_t tmp_len, sig_len;
+} bench_context;
+
+void bench_Hawk(size_t logn)
+{
+    bench_context bc;
+    PRINTF("\r\nWorking with HAWK-%4u\r\n", 1u << logn);
+
+    bc.logn = logn;
+    uint8_t seed[48];
+    RNG_GetRandomData(RNG, seed, 48);
+    shake256_init_prng_from_seed(&bc.rng, seed, sizeof(seed));
+    shake256_flip(&bc.rng);
+
+    bc.sk = malloc(HAWK_SECKEY_SIZE(logn));
+    bc.pk = malloc(HAWK_PUBKEY_SIZE[logn]);
+    bc.esk = malloc(HAWK_EXPANDEDKEY_SIZE(logn));
+    bc.sig = malloc(HAWK_SIG_COMPACT_MAXSIZE(logn));
+    bc.sig_len = 0;
+
+    bc.tmp_len = HAWK_TMPSIZE_KEYGEN(logn);
+    bc.tmp = malloc(bc.tmp_len);
+
+    TIME_PUBLIC("hawk_keygen_make", 1,
+                hawk_keygen_make(&bc.rng, bc.logn,
+                                 bc.sk, HAWK_SECKEY_SIZE(bc.logn),
+                                 bc.pk, HAWK_PUBKEY_SIZE[bc.logn],
+                                 bc.tmp, bc.tmp_len));
+
+    free(bc.tmp);
+    bc.tmp_len = HAWK_TMPSIZE_SIGNDYN_NTT(logn);
+    bc.tmp = malloc(bc.tmp_len);
+    bc.sig_len = HAWK_SIG_COMPACT_MAXSIZE(bc.logn);
+    TIME_PUBLIC("hawk_sign_dyn", 1,
+                hawk_sign_dyn(&bc.rng,
+                              bc.sig, &bc.sig_len, HAWK_SIG_COMPACT,
+                              bc.sk, HAWK_SECKEY_SIZE(bc.logn),
+                              "data", 4, bc.tmp, bc.tmp_len));
+
+    free(bc.tmp);
+    bc.tmp_len = HAWK_TMPSIZE_VERIFY_NTT(logn);
+    bc.tmp = malloc(bc.tmp_len);
+    TIME_PUBLIC("hawk_verify", 1,
+                hawk_verify(bc.sig, bc.sig_len, HAWK_SIG_COMPACT,
+                            bc.pk, HAWK_PUBKEY_SIZE[bc.logn],
+                            "data", 4, bc.tmp, bc.tmp_len));
+    free(bc.tmp);
+    free(bc.pk);
+    free(bc.sk);
+    free(bc.esk);
+    free(bc.sig);
 }
 #endif
 
@@ -275,6 +317,11 @@ int main(void)
     bench_Kyber();
 #elif CHECK == 2
     bench_XMSS();
+#elif CHECK == 3
+    bench_Falcon();
+#elif CHECK == 4
+    bench_Hawk(9U);
+    bench_Hawk(10U);
 #endif
 
     PRINTF("Infinite loop\r\n");

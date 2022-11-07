@@ -30,25 +30,24 @@ static int core_hash(const xmss_params *params,
         sha256(out, in, inlen);
     }
     else if(params->n < 32 && params->func == XMSS_SHA2) {
-        // OQS_SHA2_sha256(tmp, in, inlen);
-        // memcpy(out, tmp, params->n);
-        return -1;
+        sha256(tmp, in, inlen);
+        memcpy(out, tmp, params->n);
     }
-    else if (params->n <= 32 && params->func == XMSS_SHAKE) {
-        return -1;
-    }
-    else if (params->n == 64 && params->func == XMSS_SHA2) {
-        // OQS_SHA2_sha512(out, in, inlen);
-        return -1;
-    }
-    else if(params->n < 64 && params->func == XMSS_SHA2) {
-        // OQS_SHA2_sha512(tmp, in, inlen);
-        // memcpy(out, tmp, params->n);
-        return -1; 
-    }
-    else if (params->n <= 64 && params->func == XMSS_SHAKE) {
-        return -1;
-    }
+    // else if (params->n <= 32 && params->func == XMSS_SHAKE) {
+    //     return -1;
+    // }
+    // else if (params->n == 64 && params->func == XMSS_SHA2) {
+    //     // OQS_SHA2_sha512(out, in, inlen);
+    //     return -1;
+    // }
+    // else if(params->n < 64 && params->func == XMSS_SHA2) {
+    //     // OQS_SHA2_sha512(tmp, in, inlen);
+    //     // memcpy(out, tmp, params->n);
+    //     return -1; 
+    // }
+    // else if (params->n <= 64 && params->func == XMSS_SHAKE) {
+    //     return -1;
+    // }
     else {
         return -1;
     }
