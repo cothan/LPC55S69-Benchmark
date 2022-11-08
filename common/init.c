@@ -6,7 +6,7 @@
 void init_crypto(void)
 {
     HASHCRYPT_Init(HASHCRYPT);
-    // CASPER_Init(CASPER);
+    CASPER_Init(CASPER);
     RNG_Init(RNG);
 }
 

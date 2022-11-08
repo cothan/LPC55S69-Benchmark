@@ -12,6 +12,7 @@
 #include "fsl_hashcrypt.h"
 #include "LPC55S69_cm33_core0.h"
 #include "fsl_rng.h"
+#include "mbedtls/ecdsa.h"
 
 void init(void);
 void init_crypto(void);
