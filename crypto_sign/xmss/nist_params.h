@@ -4,7 +4,7 @@
 #include "params.h"
 
 #ifndef XMSSMT
-#define XMSSMT 0
+#define XMSSMT 1
 #endif
 
 #ifndef LEVEL

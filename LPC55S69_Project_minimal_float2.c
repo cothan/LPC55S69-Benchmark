@@ -42,7 +42,7 @@
 /* TODO: insert other include files here. */
 #include "init.h"
 
-#define CHECK 1
+#define CHECK 5
 
 #if CHECK == 0
 #include "dilithium/m4f/api.h"
@@ -56,6 +56,8 @@
 #include "falcon-512/m4-ct/api.h"
 #elif CHECK == 4
 #include "hawk/hawk.h"
+#elif CHECK == 5
+#include "sphincsplus/api.h"
 #endif
 
 /* TODO: insert other definitions and declarations here. */
@@ -300,6 +302,34 @@ void bench_Hawk(size_t logn)
     free(bc.esk);
     free(bc.sig);
 }
+#elif CHECK == 5
+void bench_sphincsplus(void)
+{
+    uint8_t sk[CRYPTO_SECRETKEYBYTES], pk[CRYPTO_PUBLICKEYBYTES];
+    uint8_t m[] = "This is a test from SandboxAQ";
+    uint8_t sm[CRYPTO_BYTES + sizeof(m)], mout[CRYPTO_BYTES + sizeof(m)];
+    size_t smlen = 0, mout_len = 0;
+
+    PRINTF("Working with %s\r\n", CRYPTO_ALGNAME);
+
+    TIME_PUBLIC("Generating keypair.. ", 5, crypto_sign_keypair(pk, sk));
+    TIME_PUBLIC("Signing..            ", 2, crypto_sign(sm, &smlen, m, sizeof(m), sk));
+    TIME_PUBLIC("Verifying..          ", 10, crypto_sign_open(mout, &mout_len, sm, smlen, pk));
+
+    if (mout_len != sizeof(m))
+    {
+        PRINTF("return size ERROR: %lu - %lu\r\n", mout_len, sizeof(m));
+    }
+
+    if (memcmp(m, mout, sizeof(m)))
+    {
+        PRINTF("ERROR\r\n");
+    }
+    else
+    {
+        PRINTF("GOOD\r\n");
+    }
+}
 #endif
 
 /*
@@ -322,6 +352,8 @@ int main(void)
 #elif CHECK == 4
     bench_Hawk(9U);
     bench_Hawk(10U);
+#elif CHECK == 5
+    bench_sphincsplus();
 #endif
 
     PRINTF("Infinite loop\r\n");
